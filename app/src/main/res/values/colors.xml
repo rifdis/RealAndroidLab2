@@ -7,4 +7,6 @@
     <color name="EditTextTextcolor">#ccc</color>
     <color name="buttonBackground">#999</color>
     <color name="ListBorder">#ccc</color>
+    <color name="SelectedListItemColor">#d8edef</color>
+    <color name="WhiteBackground">#fff</color>
 </resources>
