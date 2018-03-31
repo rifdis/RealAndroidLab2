@@ -1,6 +1,8 @@
 
 package com.example.tkarl.newlab2;
 
+import android.content.ContentValues;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.nfc.Tag;
@@ -30,7 +32,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        listArray = new ArrayList<List>();
         Button addList = (Button)findViewById(R.id.Add_List_Button);
         Button delList = (Button)findViewById(R.id.Delete_List_Button);
         addList.setOnClickListener(this);
@@ -52,17 +54,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if(!editText.getText().toString().isEmpty() || !editText.getText().toString().trim().equals(""))
                 { //start of editText empty check
                     try{
+                       String listName =editText.getText().toString();
 
                         //create a new list.
                         DateFormat df = DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.CANADA);
                         Date date = new Date();
                         date.getDate();
                         String TodayDate = df.format(date);
-                        Toast.makeText(this, "Date is " + TodayDate, Toast.LENGTH_SHORT).show();
+                        ContentValues newListValues = new ContentValues();
+                        newListValues.put(dbManager.L_ListName,listName);
+                        newListValues.put(dbManager.L_DATE,TodayDate);
+                        database.insert(dbManager.L_TABLE,null,newListValues);
+                        Toast.makeText(this, "List inserted", Toast.LENGTH_SHORT).show();
+
                     }
                     catch (Exception e){
                         Log.d(TAG, "onClick: "+e.getMessage());
+                        Toast.makeText(this, "Error "+ e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
+                    populateList();
                 }//end of editText empty check.
                 break;
             case R.id.Delete_List_Button:
@@ -70,6 +80,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    public void populateList()
+    {
+            database = dbManager.getReadableDatabase();
+           Cursor listsCursor =  database.query(dbManager.L_TABLE,null,null,null,null,null,dbManager.L_ID);
+
+           while(listsCursor.moveToNext()){
+               List newList = new List(listsCursor.getInt(0),listsCursor.getString(1),listsCursor.getString(2));
+
+              listArray.add(newList);
+               Toast.makeText(this,  "has item " + listsCursor.getString(2), Toast.LENGTH_SHORT).show();
+           }
+           listsCursor.close();
+    }
 
 
     @Override
