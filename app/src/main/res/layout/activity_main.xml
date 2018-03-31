@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.tkarl.newlab2.MainActivity"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+    <EditText
+        android:id="@+id/Edit_Text_List_Name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:width="250dp"
+        android:height="100dp"
+        android:drawableBottom="@color/colorPrimary"
+        android:singleLine="true"
+        android:hint="@string/EnterListName"
+        android:textSize="25sp"
+        android:textColorHint="@color/EditTextTextcolor"
+         />
+        <Button
+            android:id="@+id/Add_List_Button"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:text="Add"
+            android:layout_marginLeft="15dp"
+            android:background="@color/buttonBackground"
+            android:textSize="16sp"
+            android:textColor="#fff"/>
+    </LinearLayout>
+
+    <ListView
+        android:id="@android:id/list"
+        android:layout_width="300dp"
+        android:layout_height="400dp"
+        android:divider="@color/ListBorder"
+        android:dividerHeight="5sp"
+
+        >
+
+    </ListView>
+
+    <Button
+        android:id="@+id/Delete_List_Button"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="Delete List"
+        android:gravity="center_horizontal|center_vertical"
+        android:background="@color/buttonBackground"
+        android:textSize="16sp"
+        android:textColor="#fff"/> />
+
+</LinearLayout>

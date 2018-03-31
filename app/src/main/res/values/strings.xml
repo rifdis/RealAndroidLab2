@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Lists</string>
+    <string name="EnterListName">Enter List Name...</string>
+</resources>
