@@ -18,6 +18,8 @@ public class Item {
         this.itemMessage = itemMessage;
         this.status = status;
 
+
+
     }
 
     public int getId() {
@@ -35,5 +37,6 @@ public class Item {
     public String getItemMessage() {
         return itemMessage;
     }
+
 
 }

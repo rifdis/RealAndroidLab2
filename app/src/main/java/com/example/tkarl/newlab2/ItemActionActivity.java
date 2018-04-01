@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.StrictMode;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -15,14 +16,23 @@ import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
 import org.w3c.dom.Text;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.text.DateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.TimeZone;
+import java.util.*;
+import java.util.List;
 
 public class ItemActionActivity extends AppCompatActivity implements View.OnClickListener,ListView.OnItemClickListener{
     private static Item item;
@@ -35,10 +45,19 @@ public class ItemActionActivity extends AppCompatActivity implements View.OnClic
     private static int listID;
     private static Integer chosenID;
     private static EditText newItemEditText;
+    private static int itemChosenID;
+    private static String ThisListTitle;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_item_action);
+        if (android.os.Build.VERSION.SDK_INT > 9)
+        {
+            StrictMode.ThreadPolicy policy =
+                    new StrictMode.ThreadPolicy.Builder().permitAll().build();
+            StrictMode.setThreadPolicy(policy);
+        }
+
         itemListView = (ListView)findViewById(R.id.Item_Display_View);
         itemArrayList = new ArrayList<Item>();
         itemHashList = new ArrayList<HashMap<String, String>>();
@@ -64,6 +83,7 @@ public class ItemActionActivity extends AppCompatActivity implements View.OnClic
             Cursor listTitle = database.query(dbManager.L_TABLE,getName,dbManager.L_ID +"="+listID,null,null,null,null);
             listTitle.moveToFirst();
             listHeader.setText(listTitle.getString(0));
+            ThisListTitle = listTitle.getString(0);
         }
         catch (Exception e){
 
@@ -120,6 +140,7 @@ public class ItemActionActivity extends AppCompatActivity implements View.OnClic
                 {
                     Toast.makeText(this, "Error: "+e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
+                newItemEditText.setText("");
                 populateItems();
                 }
                 else{
@@ -127,32 +148,95 @@ public class ItemActionActivity extends AppCompatActivity implements View.OnClic
                 }
             break;
             case R.id.Delete_Item_Button:
+            deleteItem();
+                break;
+            case R.id.Edit_Item_Button:
                 database = dbManager.getWritableDatabase();
-                int itemChosenID = itemArrayList.get(chosenID).getId();
-                String itemChosenName = itemArrayList.get(chosenID).getItemMessage();
-                try{
 
-                    database.delete(dbManager.I_TABLE,dbManager.I_ID +" = "+itemChosenID,null);
-                    Toast.makeText(this, itemChosenName +" Deleted", Toast.LENGTH_SHORT).show();
-                    chosenID = null;
+                String newItemName = newItemEditText.getText().toString();
+                if(!newItemName.isEmpty()){
+                try{
+                    ContentValues newItemValue = new ContentValues();
+                    newItemValue.put(dbManager.I_ITEM,newItemName);
+                    database.update(dbManager.I_TABLE,newItemValue,dbManager.I_ID +"="+ itemChosenID,null);
+                    populateItems();
+                    newItemEditText.setText("");
                 }
-                catch (Exception e)
-                {
+                catch (Exception e){
                     Toast.makeText(this, "Error: "+e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
-                populateItems();
+                }
+                else{
+                    newItemEditText.hasFocus();
+                    newItemEditText.setHint(R.string.EnterNewItemName);
+                    Toast.makeText(this, "Please enter an item", Toast.LENGTH_SHORT).show();
+                }
+
+                break;
+            case R.id.Archive_Item_Button:
+                ArchiveItem();
                 break;
         }
     }
+public void deleteItem(){
+    database = dbManager.getWritableDatabase();
 
+    String itemChosenName = itemArrayList.get(chosenID).getItemMessage();
+    try{
+
+        database.delete(dbManager.I_TABLE,dbManager.I_ID +" = "+itemChosenID,null);
+        Toast.makeText(this, itemChosenName +" Deleted", Toast.LENGTH_SHORT).show();
+        chosenID = null;
+    }
+    catch (Exception e)
+    {
+        Toast.makeText(this, "Error: "+e.getMessage(), Toast.LENGTH_SHORT).show();
+    }
+    populateItems();
+}
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         for(int i = 0; i < parent.getCount();i++){
             parent.getChildAt(i).setBackgroundColor(getResources().getColor(R.color.WhiteBackground));
         }
         chosenID = position;
-
+        itemChosenID = itemArrayList.get(chosenID).getId();
         view.setBackgroundColor(getResources().getColor(R.color.SelectedListItemColor));
 
+    }
+
+    public void ArchiveItem(){
+
+        Item ThisItem = itemArrayList.get(chosenID);
+
+        String ItemName = ThisItem.getItemMessage();
+        String ItemDate = ThisItem.getDate();
+        String ItemStatus = Integer.toString(ThisItem.getStatus());
+
+        try {
+            HttpClient client = new DefaultHttpClient();
+            HttpPost post = new HttpPost("http://www.youcode.ca/Lab02Post.jsp");
+            ArrayList<NameValuePair> postParameters = new ArrayList<>();
+
+            postParameters.add(new BasicNameValuePair("LIST_TITLE", ThisListTitle));
+            postParameters.add(new BasicNameValuePair("CONTENT", ItemName));
+            postParameters.add(new BasicNameValuePair("COMPLETED_FLAG", ItemStatus));
+            postParameters.add(new BasicNameValuePair("CREATED_DATE", ItemDate));
+            postParameters.add(new BasicNameValuePair("PASSWORD", "Password1"));
+            postParameters.add(new BasicNameValuePair("ALIAS", "NoName"));
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(postParameters);
+            post.setEntity(formEntity);
+            client.execute(post);
+
+            Toast.makeText(this, ItemName + " Archived", Toast.LENGTH_SHORT).show();
+            deleteItem();
+        }
+        catch (UnsupportedEncodingException e) {
+            Toast.makeText(this, "Error: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+        } catch (ClientProtocolException e) {
+            Toast.makeText(this, "Error: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+        } catch (IOException e) {
+            Toast.makeText(this, "Error: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
 }
