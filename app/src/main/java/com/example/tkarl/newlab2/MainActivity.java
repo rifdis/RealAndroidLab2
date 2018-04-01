@@ -2,6 +2,7 @@
 package com.example.tkarl.newlab2;
 
 import android.content.ContentValues;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -34,19 +35,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static ArrayList<HashMap<String,String>> HashList;
     private static ListView listDisplay;
     private static SimpleAdapter adapter;
-    private static int chosenID;
+    private static Integer chosenID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         listArray = new ArrayList<List>();
+        HashList = new ArrayList<HashMap<String, String>>();
         Button addList = (Button)findViewById(R.id.Add_List_Button);
         Button delList = (Button)findViewById(R.id.Delete_List_Button);
+        Button viewList = (Button)findViewById(R.id.View_Items_List_Button);
         addList.setOnClickListener(this);
         delList.setOnClickListener(this);
-        listDisplay = (ListView)findViewById(R.id.List_Display_View);
+        viewList.setOnClickListener(this);
 
+        listDisplay = (ListView)findViewById(R.id.List_Display_View);
         HashList = new ArrayList<HashMap<String, String>>();
         dbManager = new DBManager(this);
        populateList();
@@ -88,6 +92,40 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }//end of editText empty check.
                 break;
             case R.id.Delete_List_Button:
+
+                if(chosenID != null)
+                {//start of check if item is selected
+                    try {
+
+                        int listID = listArray.get(chosenID).getId();
+                       String listName = listArray.get(chosenID).getListName();
+                        database = dbManager.getWritableDatabase();
+                        database.delete(dbManager.L_TABLE,dbManager.L_ID +" = "+listID,null);
+                        chosenID = null;
+                        Toast.makeText(this, listName+" Deleted", Toast.LENGTH_SHORT).show();
+                        populateList();
+                    }
+                    catch (Exception e){
+                        Toast.makeText(this, "Error: "+e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                }
+                else {
+                    Toast.makeText(this, "No item selected to delete...", Toast.LENGTH_SHORT).show();
+                }//of of check if item is selected
+                break;
+
+            case R.id.View_Items_List_Button:
+                if(chosenID != null) {//start of check if item is selected
+                    int listID = listArray.get(chosenID).getId();
+                    String listName = listArray.get(chosenID).getListName();
+                    //intent to send to the itemActionActivity.
+                    Intent intent = new Intent(this,ItemActionActivity.class);
+                    intent.putExtra("ID",listID);
+                    startActivity(intent);
+                }
+                else {
+                    Toast.makeText(this, "No item selected to view...", Toast.LENGTH_SHORT).show();
+                }//of of check if item is selected
                 break;
         }
     }
@@ -96,6 +134,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void populateList()
     {
             HashList.clear();
+            listArray.clear();
             database = dbManager.getReadableDatabase();
            Cursor listsCursor =  database.query(dbManager.L_TABLE,null,null,null,null,null,dbManager.L_ID);
 
@@ -106,6 +145,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
               listArray.add(newList);
                temp.put("NAME",listsCursor.getString(2));
                temp.put("DATE",listsCursor.getString(1));
+
                HashList.add(temp);
 
            }
@@ -117,12 +157,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+    //Declares a selected item from the list. Passes it into ChosenID which is a static variable.
+    //ChosenID will be used to select an ID when needed in the DeleteList and ViewItems button actions.
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         for(int i = 0; i < parent.getCount();i++){
             parent.getChildAt(i).setBackgroundColor(getResources().getColor(R.color.WhiteBackground));
         }
-        Toast.makeText(this, "Working " + position, Toast.LENGTH_SHORT).show();
+        chosenID = position;
+
         view.setBackgroundColor(getResources().getColor(R.color.SelectedListItemColor));
+
+
     }
 }
