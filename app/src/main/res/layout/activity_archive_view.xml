@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="com.example.tkarl.newlab2.ArchiveViewActivity">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="Archived Items"
+        android:textSize="30sp"
+        android:background="@color/EditTextTextcolor"
+        android:textColor="@color/WhiteBackground"
+        />
+    
+    <ListView
+        android:id="@+id/archive_list_view"
+        android:layout_width="match_parent"
+        android:layout_height="500dp"
+        ></ListView>
+</LinearLayout>

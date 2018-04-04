@@ -27,7 +27,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener,ListView.OnItemClickListener {
+public class MainActivity extends BaseActivity implements View.OnClickListener,ListView.OnItemClickListener {
     private static final String TAG = "TAG";
     private static DBManager dbManager;
     private static SQLiteDatabase database;

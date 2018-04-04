@@ -2,14 +2,18 @@ package com.example.tkarl.newlab2;
 
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.StrictMode;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
@@ -34,7 +38,7 @@ import java.text.DateFormat;
 import java.util.*;
 import java.util.List;
 
-public class ItemActionActivity extends AppCompatActivity implements View.OnClickListener,ListView.OnItemClickListener{
+public class ItemActionActivity extends BaseActivity  implements View.OnClickListener,ListView.OnItemClickListener,SharedPreferences.OnSharedPreferenceChangeListener{
     private static Item item;
     private static ArrayList<Item> itemArrayList;
     private static ArrayList<HashMap<String,String>> itemHashList;
@@ -47,10 +51,17 @@ public class ItemActionActivity extends AppCompatActivity implements View.OnClic
     private static EditText newItemEditText;
     private static int itemChosenID;
     private static String ThisListTitle;
+    private static String userName;
+    private static String passWord;
+    CheckBox checkBox;
+
+    SharedPreferences settings;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_item_action);
+        settings = PreferenceManager.getDefaultSharedPreferences(this);
+        settings.registerOnSharedPreferenceChangeListener(this);
         if (android.os.Build.VERSION.SDK_INT > 9)
         {
             StrictMode.ThreadPolicy policy =
@@ -58,7 +69,9 @@ public class ItemActionActivity extends AppCompatActivity implements View.OnClic
             StrictMode.setThreadPolicy(policy);
         }
 
+
         itemListView = (ListView)findViewById(R.id.Item_Display_View);
+        itemListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         itemArrayList = new ArrayList<Item>();
         itemHashList = new ArrayList<HashMap<String, String>>();
         newItemEditText= (EditText)findViewById(R.id.Edit_Text_Item_Name);
@@ -73,9 +86,11 @@ public class ItemActionActivity extends AppCompatActivity implements View.OnClic
         ArchiveItem.setOnClickListener(this);
         editItem.setOnClickListener(this);
         //end of button declerations
-
+        String fontSize = settings.getString("Title_Font_Size","45");
+        float floatFont = Float.parseFloat(fontSize);
         TextView listHeader = (TextView)findViewById(R.id.List_Name_For_Items_Display);
          listID = getIntent().getIntExtra("ID",0);
+           listHeader.setTextSize(floatFont);
         dbManager = new DBManager(this);
         try {
             String[] getName = {dbManager.L_ListName};
@@ -89,33 +104,32 @@ public class ItemActionActivity extends AppCompatActivity implements View.OnClic
 
         }
     populateItems();
+
     }
 
-    public void populateItems()
-    {
-     itemHashList.clear();
-     itemArrayList.clear();
-     database = dbManager.getReadableDatabase();
-    Cursor itemCursor = database.query(dbManager.I_TABLE,null,dbManager.I_LIST +"="+listID,null,null,null,dbManager.I_ID);
-    while (itemCursor.moveToNext())
-    {
-        HashMap<String,String> temp = new HashMap<String, String>();
-        //0 = id 1 =date 2=name 3 =status
-        Item newItem = new Item(itemCursor.getInt(0),itemCursor.getString(2),itemCursor.getString(1),itemCursor.getInt(3));
+    public void populateItems() {
+        itemHashList.clear();
+        itemArrayList.clear();
+        database = dbManager.getReadableDatabase();
+        Cursor itemCursor = database.query(dbManager.I_TABLE, null, dbManager.I_LIST + "=" + listID, null, null, null, dbManager.I_ID);
+        while (itemCursor.moveToNext()) {
+            HashMap<String, String> temp = new HashMap<String, String>();
+            //0 = id 1 =date 2=name 3 =status
+            Item newItem = new Item(itemCursor.getInt(0), itemCursor.getString(2), itemCursor.getString(1), itemCursor.getInt(3));
 
-        temp.put("NAME",newItem.getItemMessage());
-        temp.put("DATE",newItem.getDate());
-        //temp.put("STATUS",Integer.toString(newItem.getStatus()));
-        itemHashList.add(temp);
-        itemArrayList.add(newItem);
+            temp.put("NAME", newItem.getItemMessage());
+            temp.put("DATE", newItem.getDate());
+            //temp.put("STATUS",Integer.toString(newItem.getStatus()));
+            itemHashList.add(temp);
+            itemArrayList.add(newItem);
+        }
+
+        String[] keys = {"NAME", "DATE"};
+        int[] ids = {R.id.Item_Display_Name, R.id.Item_Display_date};
+        adapter = new SimpleAdapter(this, itemHashList, R.layout.item_row, keys, ids);
+        itemListView.setAdapter(adapter);
+
     }
-
-    String[] keys = {"NAME","DATE"};
-    int[] ids = {R.id.Item_Display_Name,R.id.Item_Display_date};
-    adapter = new SimpleAdapter(this,itemHashList,R.layout.item_row,keys,ids);
-    itemListView.setAdapter(adapter);
-    }
-
     @Override
     public void onClick(View v) {
 
@@ -182,6 +196,7 @@ public void deleteItem(){
     database = dbManager.getWritableDatabase();
 
     String itemChosenName = itemArrayList.get(chosenID).getItemMessage();
+    if(!Integer.toString(itemChosenID).isEmpty()){
     try{
 
         database.delete(dbManager.I_TABLE,dbManager.I_ID +" = "+itemChosenID,null);
@@ -193,6 +208,7 @@ public void deleteItem(){
         Toast.makeText(this, "Error: "+e.getMessage(), Toast.LENGTH_SHORT).show();
     }
     populateItems();
+    }
 }
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -212,7 +228,8 @@ public void deleteItem(){
         String ItemName = ThisItem.getItemMessage();
         String ItemDate = ThisItem.getDate();
         String ItemStatus = Integer.toString(ThisItem.getStatus());
-
+         userName = settings.getString("user_name","username");
+         passWord = settings.getString("password","password");
         try {
             HttpClient client = new DefaultHttpClient();
             HttpPost post = new HttpPost("http://www.youcode.ca/Lab02Post.jsp");
@@ -222,8 +239,8 @@ public void deleteItem(){
             postParameters.add(new BasicNameValuePair("CONTENT", ItemName));
             postParameters.add(new BasicNameValuePair("COMPLETED_FLAG", ItemStatus));
             postParameters.add(new BasicNameValuePair("CREATED_DATE", ItemDate));
-            postParameters.add(new BasicNameValuePair("PASSWORD", "Password1"));
-            postParameters.add(new BasicNameValuePair("ALIAS", "NoName"));
+            postParameters.add(new BasicNameValuePair("PASSWORD", userName));
+            postParameters.add(new BasicNameValuePair("ALIAS", passWord));
             UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(postParameters);
             post.setEntity(formEntity);
             client.execute(post);
@@ -239,4 +256,16 @@ public void deleteItem(){
             Toast.makeText(this, "Error: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
         }
     }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+         userName = settings.getString("user_name","username");
+         passWord = settings.getString("password","password");
+        String fontSize = settings.getString("Title_Font_Size","45");
+        float floatFont = Float.parseFloat(fontSize);
+        TextView listHeader = (TextView)findViewById(R.id.List_Name_For_Items_Display);
+        listHeader.setTextSize(floatFont);
+    }
+
+
 }

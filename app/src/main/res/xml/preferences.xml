@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/layout_preferences">
+    <EditTextPreference
+        android:key="user_name"
+        android:summary="Use this to change your alias"
+        android:title="User Name" />
+    <EditTextPreference
+        android:key="password"
+        android:password="true"
+        android:summary="Use this to edit your password"
+        android:title="User Password" />
+    <EditTextPreference
+        android:key="Title_Font_Size"
+        android:summary="Enter a font size for list titles"
+        android:title="Font Size"
+        android:inputType="number"/>
+    <ListPreference
+        android:key="main_bg_color_list"
+        android:summary="Select the background color for the main screen"
+        android:title="Background Color"
+        android:entries="@array/color_names"
+        android:entryValues="@array/color_values"/>
+</PreferenceScreen>

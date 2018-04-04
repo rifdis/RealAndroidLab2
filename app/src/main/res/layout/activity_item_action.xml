@@ -48,7 +48,7 @@
         android:layout_width="fill_parent"
         android:layout_height="320dp"
         android:divider="@color/ListBorder"
-        android:dividerHeight="5sp"
+        android:dividerHeight="1sp"
 
 
         >
