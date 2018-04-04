@@ -9,7 +9,7 @@
         android:focusable="false"
         android:layout_alignParentLeft="true"
         android:layout_gravity="bottom"
-
+        android:textSize="0dp"
       />
     <TextView
         android:id="@+id/Item_Display_Name"

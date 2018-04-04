@@ -38,7 +38,7 @@ import java.text.DateFormat;
 import java.util.*;
 import java.util.List;
 
-public class ItemActionActivity extends BaseActivity  implements View.OnClickListener,ListView.OnItemClickListener,SharedPreferences.OnSharedPreferenceChangeListener{
+public class ItemActionActivity extends BaseActivity  implements View.OnClickListener,ListView.OnItemClickListener,SharedPreferences.OnSharedPreferenceChangeListener,CheckBox.OnCheckedChangeListener{
     private static Item item;
     private static ArrayList<Item> itemArrayList;
     private static ArrayList<HashMap<String,String>> itemHashList;
@@ -53,6 +53,8 @@ public class ItemActionActivity extends BaseActivity  implements View.OnClickLis
     private static String ThisListTitle;
     private static String userName;
     private static String passWord;
+
+    View itemRow;
     CheckBox checkBox;
 
     SharedPreferences settings;
@@ -68,7 +70,6 @@ public class ItemActionActivity extends BaseActivity  implements View.OnClickLis
                     new StrictMode.ThreadPolicy.Builder().permitAll().build();
             StrictMode.setThreadPolicy(policy);
         }
-
 
         itemListView = (ListView)findViewById(R.id.Item_Display_View);
         itemListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
@@ -105,6 +106,8 @@ public class ItemActionActivity extends BaseActivity  implements View.OnClickLis
         }
     populateItems();
 
+
+
     }
 
     public void populateItems() {
@@ -128,6 +131,14 @@ public class ItemActionActivity extends BaseActivity  implements View.OnClickLis
         int[] ids = {R.id.Item_Display_Name, R.id.Item_Display_date};
         adapter = new SimpleAdapter(this, itemHashList, R.layout.item_row, keys, ids);
         itemListView.setAdapter(adapter);
+
+        itemListView.post(new Runnable() {
+            @Override
+            public void run() {
+           setCheckBox();
+            }
+        });
+
 
     }
     @Override
@@ -160,6 +171,7 @@ public class ItemActionActivity extends BaseActivity  implements View.OnClickLis
                 else{
                     Toast.makeText(this, "Please enter a name for the item", Toast.LENGTH_SHORT).show();
                 }
+                setCheckBox();
             break;
             case R.id.Delete_Item_Button:
             deleteItem();
@@ -265,6 +277,20 @@ public void deleteItem(){
         float floatFont = Float.parseFloat(fontSize);
         TextView listHeader = (TextView)findViewById(R.id.List_Name_For_Items_Display);
         listHeader.setTextSize(floatFont);
+    }
+
+    public void setCheckBox(){
+       for(int i = 0; i < itemListView.getCount();i++){
+           checkBox = (CheckBox)itemListView.getChildAt(i).findViewById(R.id.Item_Checkbox);
+           checkBox.setOnCheckedChangeListener(this);
+           checkBox.setText(Integer.toString(itemArrayList.get(i).getId()));
+       }
+    }
+
+    @Override
+    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+        String thisID = buttonView.getText().toString();
+        Toast.makeText(this, "checkbox working id is "+thisID, Toast.LENGTH_SHORT).show();
     }
 
 
