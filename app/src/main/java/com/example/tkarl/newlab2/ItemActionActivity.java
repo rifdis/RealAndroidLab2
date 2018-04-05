@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
 import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
@@ -53,6 +54,7 @@ public class ItemActionActivity extends BaseActivity  implements View.OnClickLis
     private static String ThisListTitle;
     private static String userName;
     private static String passWord;
+    String headerColor;
 
     View itemRow;
     CheckBox checkBox;
@@ -62,20 +64,21 @@ public class ItemActionActivity extends BaseActivity  implements View.OnClickLis
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_item_action);
-        settings = PreferenceManager.getDefaultSharedPreferences(this);
-        settings.registerOnSharedPreferenceChangeListener(this);
+
         if (android.os.Build.VERSION.SDK_INT > 9)
         {
             StrictMode.ThreadPolicy policy =
                     new StrictMode.ThreadPolicy.Builder().permitAll().build();
             StrictMode.setThreadPolicy(policy);
         }
-
+        settings = PreferenceManager.getDefaultSharedPreferences(this);
+        settings.registerOnSharedPreferenceChangeListener(this);
         itemListView = (ListView)findViewById(R.id.Item_Display_View);
         itemListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         itemArrayList = new ArrayList<Item>();
         itemHashList = new ArrayList<HashMap<String, String>>();
         newItemEditText= (EditText)findViewById(R.id.Edit_Text_Item_Name);
+
         //buttons
         itemListView.setOnItemClickListener(this);
         Button addItem = (Button)findViewById(R.id.Add_Item_Button);
@@ -92,6 +95,8 @@ public class ItemActionActivity extends BaseActivity  implements View.OnClickLis
         TextView listHeader = (TextView)findViewById(R.id.List_Name_For_Items_Display);
          listID = getIntent().getIntExtra("ID",0);
            listHeader.setTextSize(floatFont);
+        headerColor = settings.getString("main_bg_color_list","#cccccc");
+        listHeader.setBackgroundColor(Color.parseColor(headerColor));
         dbManager = new DBManager(this);
         try {
             String[] getName = {dbManager.L_ListName};
@@ -171,7 +176,7 @@ public class ItemActionActivity extends BaseActivity  implements View.OnClickLis
                 else{
                     Toast.makeText(this, "Please enter a name for the item", Toast.LENGTH_SHORT).show();
                 }
-                setCheckBox();
+
             break;
             case R.id.Delete_Item_Button:
             deleteItem();
@@ -242,6 +247,8 @@ public void deleteItem(){
         String ItemStatus = Integer.toString(ThisItem.getStatus());
          userName = settings.getString("user_name","username");
          passWord = settings.getString("password","password");
+        Toast.makeText(this, userName + " "+ passWord, Toast.LENGTH_SHORT).show();
+
         try {
             HttpClient client = new DefaultHttpClient();
             HttpPost post = new HttpPost("http://www.youcode.ca/Lab02Post.jsp");
@@ -251,14 +258,14 @@ public void deleteItem(){
             postParameters.add(new BasicNameValuePair("CONTENT", ItemName));
             postParameters.add(new BasicNameValuePair("COMPLETED_FLAG", ItemStatus));
             postParameters.add(new BasicNameValuePair("CREATED_DATE", ItemDate));
-            postParameters.add(new BasicNameValuePair("PASSWORD", userName));
-            postParameters.add(new BasicNameValuePair("ALIAS", passWord));
+            postParameters.add(new BasicNameValuePair("PASSWORD", passWord));
+            postParameters.add(new BasicNameValuePair("ALIAS",userName));
             UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(postParameters);
             post.setEntity(formEntity);
             client.execute(post);
 
             Toast.makeText(this, ItemName + " Archived", Toast.LENGTH_SHORT).show();
-            deleteItem();
+          deleteItem();
         }
         catch (UnsupportedEncodingException e) {
             Toast.makeText(this, "Error: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
@@ -277,20 +284,55 @@ public void deleteItem(){
         float floatFont = Float.parseFloat(fontSize);
         TextView listHeader = (TextView)findViewById(R.id.List_Name_For_Items_Display);
         listHeader.setTextSize(floatFont);
+        headerColor = settings.getString("main_bg_color_list","#ccc");
+        listHeader.setBackgroundColor(Color.parseColor(headerColor));
     }
 
     public void setCheckBox(){
        for(int i = 0; i < itemListView.getCount();i++){
            checkBox = (CheckBox)itemListView.getChildAt(i).findViewById(R.id.Item_Checkbox);
+           int thisItemStatus = itemArrayList.get(i).getStatus();
+           if (thisItemStatus == 1){
+               checkBox.setChecked(true);
+           }
            checkBox.setOnCheckedChangeListener(this);
-           checkBox.setText(Integer.toString(itemArrayList.get(i).getId()));
+           checkBox.setText(Integer.toString(i));
+
+
+
        }
     }
 
     @Override
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-        String thisID = buttonView.getText().toString();
-        Toast.makeText(this, "checkbox working id is "+thisID, Toast.LENGTH_SHORT).show();
+        item= itemArrayList.get(Integer.parseInt(buttonView.getText().toString()));
+        int itemID = item.getId();
+        database = dbManager.getWritableDatabase();
+        if(isChecked){
+            try{
+            ContentValues newItemValue = new ContentValues();
+            newItemValue.put(dbManager.I_STATUS,1);
+            database.update(dbManager.I_TABLE,newItemValue,dbManager.I_ID +"="+ itemID,null);
+            Toast.makeText(this,  item.getItemMessage() +" set to complete", Toast.LENGTH_SHORT).show();
+            }
+            catch (Exception e){
+                Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        }
+        else
+        {
+            try{
+                ContentValues newItemValue = new ContentValues();
+                newItemValue.put(dbManager.I_STATUS,0);
+                database.update(dbManager.I_TABLE,newItemValue,dbManager.I_ID +"="+ itemID,null);
+                Toast.makeText(this,  item.getItemMessage()+" set to incomplete", Toast.LENGTH_SHORT).show();
+            }
+            catch (Exception e){
+                Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+
+        }
+       populateItems();
     }
 
 
